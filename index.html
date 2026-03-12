@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Pictures</title>
+    <title>StockPulse — Market News</title>
     <style>
         * {
             margin: 0;
@@ -11,84 +11,714 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-primary: #131722;
+            --bg-secondary: #1e222d;
+            --bg-tertiary: #2a2e39;
+            --border: #363a45;
+            --text-primary: #d1d4dc;
+            --text-secondary: #787b86;
+            --text-muted: #505363;
+            --accent-blue: #2962ff;
+            --accent-blue-hover: #1e53e4;
+            --green: #089981;
+            --red: #f23645;
+        }
+
         body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
+            font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
+        }
+
+        /* Top navbar */
+        .navbar {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            white-space: nowrap;
+        }
+
+        .logo span {
+            color: var(--accent-blue);
+        }
+
+        /* Search */
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+            max-width: 480px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 6px 12px 6px 36px;
+            font-size: 14px;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .search-results {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            max-height: 320px;
+            overflow-y: auto;
+            display: none;
+            z-index: 200;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.1s;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .search-result-item .symbol {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .search-result-item .name {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .search-result-item .type-badge {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-primary);
+            padding: 2px 8px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        /* Main content */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Welcome state */
+        .welcome {
+            text-align: center;
+            padding: 120px 20px;
+        }
+
+        .welcome h2 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .welcome p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            margin-bottom: 32px;
+        }
+
+        .popular-tickers {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .ticker-chip {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .ticker-chip:hover {
+            border-color: var(--accent-blue);
+            background: var(--bg-tertiary);
+        }
+
+        /* Stock header */
+        .stock-header {
+            display: none;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+        }
+
+        .stock-header.active {
+            display: block;
+        }
+
+        .stock-header .top-row {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .stock-header .ticker {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .stock-header .company-name {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .stock-header .price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .stock-header .price {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .stock-header .change {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .stock-header .change.positive {
+            color: var(--green);
+        }
+
+        .stock-header .change.negative {
+            color: var(--red);
+        }
+
+        .stock-meta {
+            display: flex;
+            gap: 24px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            font-size: 13px;
+        }
+
+        .meta-item .label {
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+
+        .meta-item .value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* News section */
+        .news-section {
+            display: none;
+        }
+
+        .news-section.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .news-list {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 2rem;
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
         }
 
-        h1 {
-            margin-bottom: 1.5rem;
-            font-size: 2rem;
-        }
-
-        .controls {
-            margin-bottom: 2rem;
-        }
-
-        button {
-            background: #e94560;
-            color: white;
-            border: none;
-            padding: 0.75rem 2rem;
-            font-size: 1.1rem;
-            border-radius: 8px;
+        .news-item {
+            background: var(--bg-secondary);
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.1s;
+            text-decoration: none;
+            color: inherit;
         }
 
-        button:hover {
-            background: #c73652;
+        .news-item:hover {
+            background: var(--bg-tertiary);
         }
 
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-            width: 100%;
-            max-width: 1200px;
+        .news-item .news-content {
+            flex: 1;
+            min-width: 0;
         }
 
-        .gallery img {
-            width: 100%;
-            border-radius: 12px;
-            aspect-ratio: 4 / 3;
-            object-fit: cover;
-            background: #16213e;
-            transition: transform 0.2s;
+        .news-item .news-source {
+            font-size: 11px;
+            color: var(--accent-blue);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
         }
 
-        .gallery img:hover {
-            transform: scale(1.03);
+        .news-item .news-headline {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-item .news-summary {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-item .news-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error / empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .navbar {
+                padding: 0 12px;
+            }
+
+            .main {
+                padding: 16px;
+            }
+
+            .stock-header .price {
+                font-size: 24px;
+            }
+
+            .news-item {
+                flex-direction: column;
+            }
+
+            .stock-meta {
+                gap: 16px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Random Pictures</h1>
-    <div class="controls">
-        <button onclick="loadImages()">New Pictures</button>
+    <nav class="navbar">
+        <div class="logo">Stock<span>Pulse</span></div>
+        <div class="search-wrapper">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" class="search-input" id="searchInput"
+                   placeholder="Search symbol or company name..."
+                   autocomplete="off">
+            <div class="search-results" id="searchResults"></div>
+        </div>
+    </nav>
+
+    <div class="main">
+        <div id="welcomeState" class="welcome">
+            <h2>Search for any stock</h2>
+            <p>Get real-time quotes and the latest news for any publicly traded company.</p>
+            <div class="popular-tickers">
+                <div class="ticker-chip" onclick="loadStock('AAPL')">AAPL</div>
+                <div class="ticker-chip" onclick="loadStock('MSFT')">MSFT</div>
+                <div class="ticker-chip" onclick="loadStock('GOOGL')">GOOGL</div>
+                <div class="ticker-chip" onclick="loadStock('AMZN')">AMZN</div>
+                <div class="ticker-chip" onclick="loadStock('TSLA')">TSLA</div>
+                <div class="ticker-chip" onclick="loadStock('NVDA')">NVDA</div>
+            </div>
+        </div>
+
+        <div class="stock-header" id="stockHeader">
+            <div class="top-row">
+                <span class="ticker" id="stockTicker"></span>
+                <span class="company-name" id="companyName"></span>
+            </div>
+            <div class="price-row">
+                <span class="price" id="stockPrice"></span>
+                <span class="change" id="stockChange"></span>
+            </div>
+            <div class="stock-meta" id="stockMeta"></div>
+        </div>
+
+        <div class="news-section" id="newsSection">
+            <div class="section-title">Latest News</div>
+            <div id="newsContainer"></div>
+        </div>
     </div>
-    <div class="gallery" id="gallery"></div>
 
     <script>
-        function loadImages() {
-            const gallery = document.getElementById('gallery');
-            gallery.innerHTML = '';
-            for (let i = 0; i < 9; i++) {
-                const img = document.createElement('img');
-                img.src = `https://picsum.photos/600/450?random=${Date.now() + i}`;
-                img.alt = 'Random picture';
-                img.loading = 'lazy';
-                gallery.appendChild(img);
+        // CORS proxy to access Yahoo Finance and Google News from the browser
+        const PROXY = 'https://api.allorigins.win/raw?url=';
+        let searchTimeout = null;
+
+        function proxyFetch(url) {
+            return fetch(PROXY + encodeURIComponent(url));
+        }
+
+        // ── Search via Yahoo Finance autosuggest ──
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            const q = searchInput.value.trim();
+            if (q.length < 1) {
+                searchResults.classList.remove('active');
+                return;
+            }
+            searchTimeout = setTimeout(() => searchSymbol(q), 300);
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const q = searchInput.value.trim().toUpperCase();
+                if (q) {
+                    searchResults.classList.remove('active');
+                    loadStock(q);
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-wrapper')) {
+                searchResults.classList.remove('active');
+            }
+        });
+
+        async function searchSymbol(query) {
+            try {
+                const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=8&newsCount=0&listsCount=0`;
+                const res = await proxyFetch(url);
+                const data = await res.json();
+                const quotes = (data.quotes || []).filter(q =>
+                    q.quoteType === 'EQUITY' && q.symbol && !q.symbol.includes('.')
+                ).slice(0, 8);
+
+                if (quotes.length === 0) {
+                    searchResults.innerHTML = '<div style="padding:12px 14px;color:var(--text-muted);font-size:13px;">No results found</div>';
+                } else {
+                    searchResults.innerHTML = quotes.map(q => `
+                        <div class="search-result-item" onclick="selectResult('${escAttr(q.symbol)}', '${escAttr(q.shortname || q.longname || '')}')">
+                            <div>
+                                <div class="symbol">${esc(q.symbol)}</div>
+                                <div class="name">${esc(q.shortname || q.longname || '')}</div>
+                            </div>
+                            <span class="type-badge">${esc(q.exchange || '')}</span>
+                        </div>
+                    `).join('');
+                }
+                searchResults.classList.add('active');
+            } catch (e) {
+                console.error('Search error:', e);
             }
         }
 
-        loadImages();
+        function esc(text) {
+            const d = document.createElement('div');
+            d.textContent = text || '';
+            return d.innerHTML;
+        }
+
+        function escAttr(text) {
+            return (text || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        function selectResult(symbol, name) {
+            searchInput.value = symbol;
+            searchResults.classList.remove('active');
+            loadStock(symbol, name);
+        }
+
+        // ── Load stock quote from Yahoo Finance ──
+        async function loadStock(symbol, companyNameHint) {
+            symbol = symbol.toUpperCase();
+            searchInput.value = symbol;
+
+            document.getElementById('welcomeState').style.display = 'none';
+            const header = document.getElementById('stockHeader');
+            const newsSection = document.getElementById('newsSection');
+
+            // Show loading state
+            header.classList.add('active');
+            document.getElementById('stockTicker').textContent = symbol;
+            document.getElementById('companyName').textContent = companyNameHint || '';
+            document.getElementById('stockPrice').textContent = '...';
+            document.getElementById('stockChange').textContent = '';
+            document.getElementById('stockMeta').innerHTML = '';
+
+            newsSection.classList.add('active');
+            document.getElementById('newsContainer').innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading...</div>';
+
+            // Fetch quote and news in parallel
+            const quotePromise = fetchQuote(symbol);
+            const newsPromise = fetchNews(symbol, companyNameHint);
+
+            try {
+                const quote = await quotePromise;
+                renderQuote(symbol, quote, companyNameHint);
+            } catch (e) {
+                console.error('Quote error:', e);
+                document.getElementById('stockPrice').textContent = 'N/A';
+                document.getElementById('companyName').textContent = companyNameHint || symbol;
+            }
+
+            try {
+                const articles = await newsPromise;
+                renderNews(articles);
+            } catch (e) {
+                console.error('News error:', e);
+                document.getElementById('newsContainer').innerHTML = '<div class="empty-state">Could not load news. Try again later.</div>';
+            }
+        }
+
+        async function fetchQuote(symbol) {
+            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=1d`;
+            const res = await proxyFetch(url);
+            const data = await res.json();
+            const result = data.chart?.result?.[0];
+            if (!result) throw new Error('No data');
+            return result;
+        }
+
+        function renderQuote(symbol, result, companyNameHint) {
+            const meta = result.meta || {};
+            const price = meta.regularMarketPrice ?? 0;
+            const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? 0;
+            const change = price - prevClose;
+            const changePct = prevClose ? (change / prevClose) * 100 : 0;
+
+            document.getElementById('companyName').textContent =
+                meta.longName || meta.shortName || companyNameHint || symbol;
+
+            document.getElementById('stockPrice').textContent = '$' + price.toFixed(2);
+
+            const changeEl = document.getElementById('stockChange');
+            const sign = change >= 0 ? '+' : '';
+            changeEl.textContent = `${sign}${change.toFixed(2)} (${sign}${changePct.toFixed(2)}%)`;
+            changeEl.className = 'change ' + (change >= 0 ? 'positive' : 'negative');
+
+            // Meta details
+            const metaItems = [];
+            if (meta.regularMarketDayHigh) metaItems.push({ label: 'High', value: '$' + meta.regularMarketDayHigh.toFixed(2) });
+            if (meta.regularMarketDayLow) metaItems.push({ label: 'Low', value: '$' + meta.regularMarketDayLow.toFixed(2) });
+            if (prevClose) metaItems.push({ label: 'Prev Close', value: '$' + prevClose.toFixed(2) });
+            if (meta.regularMarketVolume) metaItems.push({ label: 'Volume', value: formatNumber(meta.regularMarketVolume) });
+            if (meta.currency) metaItems.push({ label: 'Currency', value: meta.currency });
+            if (meta.exchangeName) metaItems.push({ label: 'Exchange', value: meta.exchangeName });
+
+            document.getElementById('stockMeta').innerHTML = metaItems.map(m => `
+                <div class="meta-item">
+                    <div class="label">${m.label}</div>
+                    <div class="value">${m.value}</div>
+                </div>
+            `).join('');
+        }
+
+        function formatNumber(n) {
+            if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+            if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+            if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+            return n.toString();
+        }
+
+        // ── Fetch news from Google News RSS ──
+        async function fetchNews(symbol, companyName) {
+            // Build a search query: use company name if available for better results
+            const query = companyName
+                ? `${symbol} ${companyName} stock`
+                : `${symbol} stock`;
+            const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
+            const res = await proxyFetch(rssUrl);
+            const text = await res.text();
+            return parseRss(text);
+        }
+
+        function parseRss(xml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            const items = doc.querySelectorAll('item');
+            const articles = [];
+
+            items.forEach((item, i) => {
+                if (i >= 20) return;
+                const title = item.querySelector('title')?.textContent || '';
+                const link = item.querySelector('link')?.textContent || '';
+                const pubDate = item.querySelector('pubDate')?.textContent || '';
+                const source = item.querySelector('source')?.textContent || '';
+
+                // Google News wraps description in CDATA with HTML
+                const descRaw = item.querySelector('description')?.textContent || '';
+                const descDoc = new DOMParser().parseFromString(descRaw, 'text/html');
+                const summary = descDoc.body?.textContent?.trim() || '';
+
+                articles.push({
+                    headline: title.replace(/ - .*$/, ''), // strip trailing source
+                    source: source,
+                    url: link,
+                    time: pubDate ? new Date(pubDate) : null,
+                    summary: summary
+                });
+            });
+
+            return articles;
+        }
+
+        function renderNews(articles) {
+            const container = document.getElementById('newsContainer');
+
+            if (!articles || articles.length === 0) {
+                container.innerHTML = '<div class="empty-state">No recent news found for this symbol.</div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="news-list">' + articles.map(a => {
+                const timeStr = a.time ? formatTimeAgo(a.time) : '';
+                return `
+                    <a href="${esc(a.url)}" target="_blank" rel="noopener" class="news-item">
+                        <div class="news-content">
+                            <div class="news-source">${esc(a.source)}</div>
+                            <div class="news-headline">${esc(a.headline)}</div>
+                            ${a.summary ? `<div class="news-summary">${esc(a.summary)}</div>` : ''}
+                            ${timeStr ? `<div class="news-time">${timeStr}</div>` : ''}
+                        </div>
+                    </a>
+                `;
+            }).join('') + '</div>';
+        }
+
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMin = Math.floor(diffMs / 60000);
+            const diffHr = Math.floor(diffMs / 3600000);
+            const diffDay = Math.floor(diffMs / 86400000);
+
+            if (diffMin < 1) return 'Just now';
+            if (diffMin < 60) return diffMin + 'm ago';
+            if (diffHr < 24) return diffHr + 'h ago';
+            if (diffDay < 7) return diffDay + 'd ago';
+            return date.toLocaleDateString();
+        }
     </script>
 </body>
 </html>
