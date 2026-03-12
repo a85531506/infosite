@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Pictures</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        h1 {
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+        }
+
+        .controls {
+            margin-bottom: 2rem;
+        }
+
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #c73652;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .gallery img {
+            width: 100%;
+            border-radius: 12px;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            background: #16213e;
+            transition: transform 0.2s;
+        }
+
+        .gallery img:hover {
+            transform: scale(1.03);
+        }
+    </style>
+</head>
+<body>
+    <h1>Random Pictures</h1>
+    <div class="controls">
+        <button onclick="loadImages()">New Pictures</button>
+    </div>
+    <div class="gallery" id="gallery"></div>
+
+    <script>
+        function loadImages() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const img = document.createElement('img');
+                img.src = `https://picsum.photos/600/450?random=${Date.now() + i}`;
+                img.alt = 'Random picture';
+                img.loading = 'lazy';
+                gallery.appendChild(img);
+            }
+        }
+
+        loadImages();
+    </script>
+</body>
+</html>
